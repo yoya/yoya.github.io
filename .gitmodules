@@ -1,3 +1,24 @@
 [submodule "image.js"]
 	path = image.js
 	url = git@github.com:yoya/image.js.git
+[submodule "swfdump.js"]
+	path = swfdump.js
+	url = git@github.com:yoya/swfdump.js.git
+[submodule "mp4.js"]
+	path = mp4.js
+	url = git@github.com:yoya/mp4.js.git
+[submodule "ffxi"]
+	path = ffxi
+	url = git@github.com:yoya/ffxi.git
+[submodule "css.js"]
+	path = css.js
+	url = git@github.com:yoya/css.js.git
+[submodule "sf2.js"]
+	path = sf2.js
+	url = git@github.com:yoya/sf2.js.git
+[submodule "wafrag"]
+	path = wafrag
+	url = git@github.com:yoya/wafrag.git
+[submodule "windchime.js"]
+	path = windchime.js
+	url = git@github.com:yoya/windchime.js.git
