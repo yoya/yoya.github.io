@@ -1,0 +1,3 @@
+[submodule "image.js"]
+	path = image.js
+	url = git@github.com:yoya/image.js.git
