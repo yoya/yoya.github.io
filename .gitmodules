@@ -7,9 +7,6 @@
 [submodule "mp4.js"]
 	path = mp4.js
 	url = git@github.com:yoya/mp4.js.git
-[submodule "ffxi"]
-	path = ffxi
-	url = git@github.com:yoya/ffxi.git
 [submodule "css.js"]
 	path = css.js
 	url = git@github.com:yoya/css.js.git
@@ -22,3 +19,6 @@
 [submodule "windchime.js"]
 	path = windchime.js
 	url = git@github.com:yoya/windchime.js.git
+[submodule "ffxi"]
+	path = ffxi
+	url = git@github.com:yoya/ffxi.git
