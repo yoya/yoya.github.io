@@ -22,3 +22,6 @@
 [submodule "ffxi"]
 	path = ffxi
 	url = git@github.com:yoya/ffxi.git
+[submodule "canvas.js"]
+	path = canvas.js
+	url = git@github.com:yoya/canvas.js.git
