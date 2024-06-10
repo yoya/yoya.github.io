@@ -1,10 +1,10 @@
 <?php
 
 listFile(".");
+
 function listFile($dname) {
     echo "<ul>\n";
-    $d = opendir($dname);
-    while ($f = readdir($d)) {
+    foreach (scandir($dname) as $f) {
         if ($dname === ".") {
             $path = $f;
         } else {
