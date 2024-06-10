@@ -1,29 +1,31 @@
 <?php
 
-listFile(".");
+listFile(".", 0);
 
-function listFile($dname) {
-    echo "<ul>\n";
+function listFile($dname, $depth) {
+    $indent = str_repeat(" ", $depth*2);
+    echo "$indent<ul>\n";
+    $flist = [];
     foreach (scandir($dname) as $f) {
-        if ($dname === ".") {
-            $path = $f;
-        } else {
-            $path = "$dname/$f";
-        }
-        $firstchar = substr($path, 0, 1);
-        $lastchar = substr($path, -1);
-        if (($f[0] === ".") ||
-            ($path === "index.php") || ($path === "index.html") ||
-            ($lastchar === "~") || ($lastchar === "#")) {
-            ; // skip
-        } else if (is_dir($path)) {
-            echo "<li> $path".PHP_EOL;
-            listFile($path);
-        } else if (is_file($path)) {
-            echo "<li> <a href='$path'> $path </a>".PHP_EOL;
-        } else {
-            echo "<li> $path".PHP_EOL;
+        $lastchar = substr($f, -1);
+        if (($f[0] !== ".") &&
+            ($f !== "index.php") && ($f !== "index.html") &&
+            ($lastchar !== "~") && ($lastchar !== "#")) {
+            $flist []= $f;
         }
     }
-    echo "</ul>\n";
+    foreach ($flist as $f) {
+        $path = ($dname === ".")? $f: "$dname/$f";
+        if (is_file($path)) {
+            echo "$indent  <li> <a href='$path'> $path </a>".PHP_EOL;
+        }
+    }
+    foreach ($flist as $f) {
+        $path = ($dname === ".")? $f: "$dname/$f";
+        if (is_dir($path)) {
+            echo "$indent  <li> $path".PHP_EOL;
+            listFile($path, $depth + 1);
+        }
+    }
+    echo "$indent</ul>\n";
 }
