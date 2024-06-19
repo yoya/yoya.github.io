@@ -17,7 +17,7 @@ function listFile($dname, $depth) {
     foreach ($flist as $f) {
         $path = ($dname === ".")? $f: "$dname/$f";
         if (is_file($path)) {
-            echo "$indent  <li> <a href='$path'> $path </a>".PHP_EOL;
+            echo "$indent  <li> <a href='".urlencode($path)."'> $path </a>".PHP_EOL;
         }
     }
     foreach ($flist as $f) {
