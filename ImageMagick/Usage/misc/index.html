@@ -1,0 +1,2211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="generator" content="HTML Tidy for HTML5 for Linux version 5.8.0">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../assets/usage.css">
+  <title>Miscellaneous -- ImageMagick Examples</title>
+  <link rel="icon" href="../img_www/favicon.ico" type="image/x-icon">
+  <link rel="shortcut" href="../img_www/favicon.ico" type="image/x-icon">
+  <link rel="canonical" href="https://imagemagick.org/Usage/misc/">
+</head>
+<body>
+  <main class="container">
+    <div class="magick-template">
+      <div class="magick-header">
+        <h1>ImageMagick Examples --<br>
+        <img src="../img_www/space.gif" width="50" height="1"> Miscellaneous</h1>
+        <div>
+          <dl>
+            <dt><b>Index</b></dt>
+            <dt>
+              <a href="../"><img src="../img_www/granitesm_left.gif" border="0" width="15" height="15"> ImageMagick Examples Preface and Index</a>
+            </dt>
+            <dd>
+              <a href="#interpolate"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> Interpolation</a> <font size="-1">(Inter-pixel Color Lookups)</font>
+              <ul>
+                <li>
+                  <a href="#interpolate_simple">Simple Interpolation Methods</a>
+                </li>
+                <li><font size="-1"><a href="#bilinear">Bilinear</a>,&nbsp; <a href="#mesh">Mesh</a>,&nbsp; <a href="#catrom">Catrom</a>,&nbsp; <a href="#spline">Spline</a></font></li>
+                <li>
+                  <a href="#interpolate_bgnd">Interpolate on a Background</a>
+                </li>
+                <li>
+                  <a href="#interpolate_line">Interpolate of a Rotated Line</a>
+                </li>
+                <li>
+                  <a href="#interpolate_edge">Interpolate of a Rotate Edge</a>
+                </li>
+              </ul>
+            </dd>
+            <dd>
+              <a href="#virtual-pixel"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> Virtual Pixels</a> <font size="-1">(Missed-Image Color Lookups)</font>
+              <ul>
+                <li><font size="-1"><a href="#edge">Edge</a>,&nbsp; <a href="#tile">Tile</a>,&nbsp; <a href="#mirror">Mirror</a>,&nbsp; <a href="#transparent">Transparent</a>,&nbsp; <a href="#black">Black</a>,&nbsp; <a href="#gray">Gray</a>,&nbsp; <a href="#white">White</a>,&nbsp; <a href="#background">Background</a>,&nbsp;<br>
+                <a href="#horizontal_tile">HoriziontalTile</a>,&nbsp; <a href="#horizontal_edge">HoriziontalTileEdge</a>,&nbsp; <a href="#vertical_tile">VerticalTile</a>,&nbsp; <a href="#vertical_edge">VerticalTileEdge</a>,&nbsp;<br>
+                <a href="#checker_tile">CheckerTile</a>,&nbsp; <a href="#random">Random</a>,&nbsp; <a href="#dither">Dither</a></font></li>
+                <li>
+                  <a href="#virtual_infinities">Virtual Pixel and Infinities</a>
+                </li>
+                <li>
+                  <a href="#virtual_colors">Virtual Pixel Colors</a>
+                </li>
+                <li>
+                  <a href="#virtual_examples">Virtual Pixel Examples</a>
+                </li>
+                <li>
+                  <a href="#virtual_implode">Implosion Effects on Virtual Pixels</a>
+                </li>
+              </ul>
+            </dd>
+            <dd>
+              <a href="#spots"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> Random Spots of Solid Color</a>
+            </dd>
+            <dd>
+              <a href="#annotate"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> Annotate Argument Usage</a> <img src="../img_www/space.gif" width="20" height="1">
+            </dd>
+            <dd>
+              <a href="#splice"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> Splice: Creating a New Image Operator</a>
+            </dd>
+            <dd>
+              <a href="#border"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> Border, Frame, and the use of BorderColor</a>
+            </dd>
+            <dd>
+              <a href="#list_test"><img src="../img_www/granitesm_right.gif" border="0" width="15" height="15"> List Operator Testing</a>
+            </dd>
+          </dl>This page consists of examples which test various aspects of ImageMagick. But which do not properly fit into the discussions on the other example pages (at least not formally). Also included on this page are some tables demonstrating the results of versions argument with specific IM operators. However other people have also done this, which unless I have something to add, I will not deal with further.
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="interpolate" id="interpolate"></a>
+          <h2>Pixel Interpolation <font size="-2">or Inter-pixel Color Lookup</font></h2>The "<code><a href="../option_link.cgi?interpolate">-interpolate</a></code>" setting is used when looking up a color in a source image, but that 'lookup point' falls between the pixels of the source image. This is done in various image operations, such as the "<code><a href="../option_link.cgi?fx">-fx</a></code>" (<a href="../transform/#fx">DIY Special Effects Operator</a>), and "<code><a href="../option_link.cgi?distort">-distort</a></code>" (<a href="../distorts/#distort">Generalized Image Distortion Operator</a>), as well as other related operators like the <a href="../warping/#circular">Circular Distortions</a>. Basically 'interpolation' tells IM how to interpret a <a href="../distorts/#lookup">Direct Color Lookup</a> from an image, when the point does not exactly match an actual pixel in an image, but falls in the space between pixels. For example if you look up the color at pixel location <code>3,4</code> you should get the exact pixel color. But what should IM return if you looked up the color of an image at the point <code>3.23,4.75</code>? Should you get the pixel color at <code>3,4</code> or <code>3,5</code>? or perhaps some a mix of the surrounding pixels colors, and if so how should the colors be merged together? <b><i>Pixel Interpolation</i> defines what ImageMagick should do when looking up a single color at a floating point position (in pixel coordinates).</b> Interpolation is in some ways similar to pixel resampling, such as provided by <a href="../filter/#filter">Resampling Filters</a>. The essentual difference is that resampling has a 'scale', 'area' or variable 'window' from which a color that represents all the pixels in the area is returned. Interpolation does not have a 'scale' involved, only a single 'point' of lookup, and only a fixed sized 'area' around that point from which to determine the color to use at that point. Of course most area resampling algorithms tend to devolve to an interpolative method when the area of resampling reaches a minimim working 'window', and this naturally happens when images are being enlarged, or upsampled. This is why <a href="../filter/#interpolated">Interpolated Filters</a> and <a href="filter/#gaussian">Gaussian Blurring Filters</a> tend to work better for enlarging images. Interpolation is basically a lower form of sampling, and is basically used when you want a simple and fast answer to the 'what color' question. <a name="integer" id="integer"></a> <a name="nearest" id="nearest"></a> <a name="nearest-neighbor" id="nearest-neighbor"></a> <a name="blend" id="blend"></a> <a name="average" id="average"></a> <a name="average9" id="average9"></a> <a name="average16" id="average16"></a> <a name="interpolate_simple" id="interpolate_simple"></a>
+          <h3>Simple Interpolation Methods</h3>These are straight forward, simple methods, that try to do as lettl as posible to return a color to use from a 'point interpolation' The simplest is '<b><code>Nearest</code></b>' and '<b><code>Integer</code></b>', will just pick a single pixel color from the source image, as it without any mixing or other blending effects. This preserves original color values of the image but at a cost of aliasing effects, and typically a less than smooth look to images.
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/warning.gif" width="28" height="28"><img src="../img_www/space.gif" width="12" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>As of IM v6.7.6-2 you can use '<code>Nearest</code>' as a short hand for the '<code>Nearest-Neighbour</code>' interpolation setting.</i></font></td>
+            </tr>
+          </table>The two are very similar, only differing in which pixel the lookup coordinate extracts from the source image. Specifically '<code>Integer</code>' will simply round down the lookup point to select the pixel, which results in a general translation half a pixel right and downward. It is typically only used in simplified 'scaling' of the source image. On the other hand '<code>Nearest</code>' will select the closest pixel to the floating point lookup coordinate, and as such produces a more correct result.'<b><code>Blend</code></b>' Will blend together (average) the nearest 1, 2 or 4 pixels, depending on their distance from the sampling point. The result is that the original pixel color is still present, but halved in size, while a checkerboard of blended colors fills space between. (see example below) '<b><code>Average</code></b>', will never actually produce an exact color match, but will always mix the 4 surrounding pixels to produce a local average. This can be useful for color lookup situations. '<code>Average4</code>' can also be used an an alias for this interpolation method. '<b><code>Average9</code></b>' is similar but will average the nearest 9 pixels around the sampling point, producing a blurry result. '<b><code>Average16</code></b>' will average the nearest 16 pixels around the sampling point, producing an extrememly blurry result. Here is a summery of the various simple interpolation methods, when enlarging a small group of colored pixels, or a single white pixel. The original image looks like the "Nearest" result, but much smaller.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre><code execute="" script="">
+  for method in  integer nearest blend average average9 average16 ; do
+    magick \( xc:red xc:blue +append \) \
+            \( xc:yellow xc:cyan +append \) -append \
+            -bordercolor black -border 1 \
+            -filter point -interpolate $method \
+            +distort SRT 20,0 ip_color_${method}.jpg
+    magick xc: -bordercolor black -border 2 \
+            -filter point -interpolate $method \
+            +distort SRT 16,0 ip_pixel_${method}.jpg
+  done
+</code></pre>
+                </td>
+              </tr>
+            </table>
+            <table cellspacing="10">
+              <tr>
+                <td>
+                  <a href="ip_color_integer.jpg"><img src="ip_color_integer.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_color_nearest.jpg"><img src="ip_color_nearest.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_color_blend.jpg"><img src="ip_color_blend.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_color_average.jpg"><img src="ip_color_average.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_color_average9.jpg"><img src="ip_color_average9.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_color_average16.jpg"><img src="ip_color_average16.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="ip_pixel_integer.jpg"><img src="ip_pixel_integer.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_pixel_nearest.jpg"><img src="ip_pixel_nearest.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_pixel_blend.jpg"><img src="ip_pixel_blend.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_pixel_average.jpg"><img src="ip_pixel_average.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_pixel_average9.jpg"><img src="ip_pixel_average9.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_pixel_average16.jpg"><img src="ip_pixel_average16.jpg" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <th>Integer</th>
+                <th>Nearest</th>
+                <th>Blend</th>
+                <th>Average</th>
+                <th>Average9</th>
+                <th>Average16</th>
+              </tr>
+            </table>
+          </div>
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/warning.gif" width="28" height="28"><img src="../img_www/space.gif" width="12" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>Before IM v6.7.7-6 '<code>Average</code>' was actually equivalent to which is now '<code>Average16</code>'. The other two averging interpolators as well as '<code>Blend</code>', and '<code>Background</code>' was added at this time.</i></font></td>
+            </tr>
+          </table><a name="background_ic" id="background_ic"></a> One other simple interpolation method is also provided, '<b><code>Background</code></b>' which simply returns the current background color for any 'sampling' of the source image. In many ways this is rather usless, as typically you will just end up with a blank solid colored image. Its primary use is as a check of more complex resampling functions, such as a <a href="../distorts/#distort_failure">Resampling Failure</a>, where the EWA resampling filter (typically used from the <a href="../distorts/#distort">General Distortion Operator</a>) will fall back to an interpolated lookup when resampling fails to find any pixels in its 'support' or resampling area. By setting interpolation to '<code>Background</code>', and setting a background color to something that stands out (like '<code>red</code>') you can then look for pixels in the resulting image to see where resampling 'failed' or 'missed all source image pixels' for some reason or another. Typically due to too small a support setting, or from playing with expert filter options. <i>FUTURE: Possible future interpolation option of "random" selection over the interpolated area. Could be useful for fancy interpolated effects!</i> <a name="bilinear" id="bilinear"></a>
+          <h3>Bilinear</h3>'<b><code>Bilinear</code></b>' (or linear interpolation) is the <b>default interpolation method</b>, and probably one of the simplest ways of getting a real interpolated result, from combining colors of the pixels around the lookup or sampling point. Here is a diagram explaining how a bilinear interpolation works.
+          <div align="center"><img src="../img_diagrams/bilinear_interpolation.jpg" width="370" height="211" align="middle" vspace="5" hspace="5" border="0" alt="[diagram]"></div>That is, to say, it simply connects striaght lines in the orthogonal directions to locate the color of the given sampling point. The result is also equivelent to a <a href="../filter/#triangle">Triangle Resampling Filter</a>, when used with resize.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap  -fx 'v.p{i/(w-1),j/(h-1)}' \
+          interpolate_bilinear.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_bilinear.jpg"><img src="interpolate_bilinear.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><!--
+  #Distort equivelent -- two point affine of pixel centers
+  # This is a bit more complex and harder to explain!
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -filter point -interpolate bilinear \
+          -define distort:viewport=100x100 \
+          -distort Affine '.5,.5 .5,.5   1.5,1.5 99.5,99.5' \
+          interpolate_bilinear.jpg
+-->
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:white xc:black +append \) \
+          \( xc:black xc:white +append \) -append \
+          -size 100x100 xc: +swap -fx 'v.p{i/(w-1),j/(h-1)}' \
+          interpolate_saddle.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_saddle.jpg"><img src="interpolate_saddle.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This last image shows how a linear gradient is formed along the edges between the four known points, and then a second linear gradient is formed between those edges. That is, the colors between the surrounding pixels is generated using a horizontal and vertical linear gradients. This inturn produces a curved 2 dimensional gradient that is typically known as a 'saddle', in that it is rasied on two oppisite corners and lowered on the other two corners. You can even use this method to more directly generate a 45 degree angled linear gradient, but requires you to specify the middle color for the diagonally opposite corners.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:blue xc:navy +append \) \
+          \( xc:navy xc:black +append \) -append \
+          -size 100x100 xc: +swap -fx 'v.p{i/(w-1),j/(h-1)}' \
+          interpolate_45linear.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_45linear.jpg"><img src="interpolate_45linear.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>The most important aspect of this default interpolation method, is that the very center pixel of the image will always be an average of all four corner colors, with perfect linear gradients at the edges, and exact color matching at the corners. <a name="mesh" id="mesh"></a>
+          <h3>Mesh</h3>The "<code><a href="../option_link.cgi?interpolate">-interpolate</a></code>" setting of '<code>Mesh</code>' is a variation of the '<code><a href="#bilinear">Bilinear</a></code>' interpolation. Where as '<code>Bilinear</code>' will produce a 3 dimensional curved surface, '<code>Mesh</code>' was designed to split the inter-pixel area into two flat triangular surfaces. The division of the area into two triangles is based on the diagonal with the two 'closest' corner colors.
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/expert.gif" width="23" height="26"><img src="../img_www/space.gif" width="17" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>For details of the '<code>Mesh</code>' algorithm, see the paper <a href="http://www.cs.bath.ac.uk/~pjw/Q3D/forum-ddt.pdf">Image Interpolation by Pixel-Level Data-Dependent Triangulation</a>.</i></font></td>
+            </tr>
+          </table>For example lets use the same set of corner colors we used above.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap   -interpolate Mesh \
+          -fx 'v.p{i/(w-1),j/(h-1)}'    interpolate_tri-mesh.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_tri-mesh.jpg"><img src="interpolate_tri-mesh.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>As you can see the '<code>Mesh</code>' algorithm produced almost exactly the same set of color interpolations as '<code><a href="#bilinear">Bilinear</a></code>'. However if we reverse the yellow and cyan colors..
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:cyan xc:yellow +append \) -append \
+          -size 100x100 xc: +swap   -interpolate Mesh \
+          -fx 'v.p{i/(w-1),j/(h-1)}'    interpolate_tri-mesh2.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_tri-mesh2.jpg"><img src="interpolate_tri-mesh2.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This time the '<code>Mesh</code>' algorithm decided that the '<code>blue</code>' and '<code>cyan</code>' colors were the two closest corners, and created a linear gradient diagonally between these two corners. The rest of the colors then form a simple flat triangular gradient from this line to the other two corners. This may seem like an unusual interpolation, but the method ensures that sharp borders, remain quite sharp, when color images are only slightly resized, rotated or sheared. In fact a <a href="../resize/#adaptive-resize">Adaptive Resize</a> operation ("<code><a href="../option_link.cgi?adaptive-resize">-adaptive-resize</a></code>") uses this fact for small image resizes to reduce excessive blurring of the result. For example if we have a single 'white' corner, '<code>mesh</code>' assumes that an edge has been found and adjusts the interpolated colors to highlight this edge.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:black xc:black +append \) \
+          \( xc:white xc:black +append \) -append \
+          -size 100x100 xc: +swap    -interpolate Mesh \
+          -fx 'v.p{i/(w-1),j/(h-1)}'    interpolate_tri-mesh3.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_tri-mesh3.jpg"><img src="interpolate_tri-mesh3.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>Of course if the colors produce reasonably consistent gradient the 'mesh' interpolation also produces a reasonably consistent gradient.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:blue xc:navy +append \) \
+          \( xc:black xc:black +append \) -append \
+          -size 100x100 xc: +swap    -interpolate Mesh \
+          -fx 'v.p{i/(w-1),j/(h-1)}'    interpolate_tri-mesh4.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_tri-mesh4.jpg"><img src="interpolate_tri-mesh4.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>As you can see the result quite a reasonable gradient, though if you look hard you can see the diagonal join of the two separate triangles. The change isn't as smooth as bi-linear (which isn't exactly smooth either) but these do not try to preserve the sharp edges in resized or distorted images either. <a name="bicubic" id="bicubic"></a> <a name="catrom" id="catrom"></a>
+          <h3>Catrom (Catmull-Rom)</h3>The "<code><a href="../option_link.cgi?interpolate">-interpolate</a></code>" setting of '<code>Catrom</code>' (generally imprecisely known as '<code>BiCubic</code>' interpolation), is more complex, in the determination of the colors of a point lookup. Basically it does not just look at the colors in the corners of the inter-pixel area, but goes further to look at the colors beyond those nearest-neighbour pixels. A total of 16 pixels in a 4x4 area around the sampling point. Basically it fits a curve to the whole area involved, so as to determine the best overall color to use. Here is a diagram which probably explains the process better...
+          <div align="center"><img src="../img_diagrams/bicubic_interpolation.jpg" width="400" height="211" align="middle" vspace="5" hspace="5" border="0" alt="[diagram]"></div>And here is the interpolated colors for our standard four colors.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap   -interpolate Catrom \
+          -fx 'v.p{i/(w-1),j/(h-1)}'    interpolate_catrom.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_catrom.jpg"><img src="interpolate_catrom.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>The above image may look very similar to a '<code><a href="#bilinear">Bilinear</a></code>' interpolation, however the result has a smoother blending curve rather than straight lines to produce the interpolated color. What this image does not show however is the effect of the other pixels surrounding our four near neighbours. For that we need to look at a slightly larger area. For this specific (very small) example the surrounding pixels are controled by the <a href="#virtual">Virtual Pixel</a> setting.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap -interpolate Catrom -virtual-pixel edge \
+          -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}'   interpolate_catrom_edge.jpg
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap -interpolate Catrom -virtual-pixel White \
+          -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}'   interpolate_catrom_white.jpg
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap -interpolate Catrom -virtual-pixel Black \
+          -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}'   interpolate_catrom_black.jpg
+</samp></pre>
+                </td>
+              </tr>
+            </table><a href="interpolate_catrom_edge.jpg"><img src="interpolate_catrom_edge.jpg" width="100" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a> <a href="interpolate_catrom_white.jpg"><img src="interpolate_catrom_white.jpg" width="100" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a> <a href="interpolate_catrom_black.jpg"><img src="interpolate_catrom_black.jpg" width="100" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a>
+          </div>
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/reminder.gif" width="20" height="16"><img src="../img_www/space.gif" width="20" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>In a real image the effects of the <a href="#virtual">Virtual Pixels</a> usually only effects results near the very edges of the image. As this image is only 2 pixels wide, the above example is strongly effected. This is not the case in larger more typical images.</i></font></td>
+            </tr>
+          </table>As you can see the curve is strongly influenced by the surrounding colors, resulting in either a very tight sharp color change, or a more blended color change as defined by the surrounding colors. However you can also see that strong changes in the surrounding pixel colors, can produce a small areas of that colors inverse or negative. This is a <a href="../filter/#ringing">Ringing Artefact</a> and is typically only seen on extremely sharp edges of complementary colors in a real image.
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/expert.gif" width="23" height="26"><img src="../img_www/space.gif" width="17" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>This ringing effect on very very strong color edges can become clipped resulting in a line of horrible pixels. This problem can be prevented by doing resizes and interpolation in a different colorspace than '<code>RGB</code>', such as '<code>Lab</code>' or '<code>Luv</code>' colorspaces.<br>
+              <br>
+              For more information and examples of this problem see <a href="../resize/#resize_lab">Resizing in LAB colorspace</a>.<br>
+              <br></i></font></td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/warning.gif" width="28" height="28"><img src="../img_www/space.gif" width="12" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>Note that '<code>BiCubic</code>' (interpolated <a href="../filter/#cubics">Cubic Filter</a>), refers to a very large family of filters, and as such is very inexact in its meaning. It is however still available, but its use is depreciated, in favor of more exact names.<br>
+              <br>
+              After IM v6.7.7-7 '<code>BiCubic</code>' is simply an alias to '<code>Catrom</code>', which is typically regarded as a good 'cubic interpolator' (b=0, c=1/2). You should use the name '<code>Catrom</code>' rather than '<code>BiCubic</code>' so as to be clear what you are using for interpolation.<br>
+              <br>
+              Before IM v6.7.7-7 '<code>BiCubic</code>' actually used an extreme 'Cardinal Cubic' filter (b=0, c=1) which has an overly strong negative ringing effect. This have been completely replaced by '<code>Catrom</code>', and is no longer available as an interpolative function.<br>
+              <br>
+              Before IM v6.3.5-3 '<code>BiCubic</code>' was implemented as a very blurry '<code>Spline</code>' cubic interpolator. That filter was renamed with this version of ImageMagick. (see next)<br>
+              <br></i></font></td>
+            </tr>
+          </table><a name="spline" id="spline"></a>
+          <h3>Spline</h3>The '<code>Spline</code>' interpolation method, like '<code><a href="#catrom">Catrom</a></code>' above, also uses the nearest 16 pixels. However this is a very blurry, Gaussian-like, interpolation.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="top">
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap   -interpolate spline \
+          -fx 'v.p{i/(w-1),j/(h-1)}'    interpolate_spline.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="interpolate_spline.jpg"><img src="interpolate_spline.jpg" width="100" height="100" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>As you can see the colors in the very corners of the above '<code>Spline</code>' interpolation are muted, as the interpolated surface does not actually go through the original color of those pixels. Essentially it is overly 'blurred', and is more correctly known as a 'B-Spline' surface. The surface is still a type of <a href="../filter/#cubics">Cubic Filter</a> (b=1, c=0) as it generated using a technique of a piece-wise cubic curves. However this curve only approaches the original pixel colors, especially in areas of strong color changes. That is, an interpolated lookup of an exact integer pixel position, will not return that actual pixels color, but a blurring of the color with the surrounding pixels. This is often thought of as bad, but can be used as a general smoothing function. Like '<code><a href="#catrom">Catrom</a></code>' it is also effected by the surrounding pixels.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre class="bg-light text-dark mx-4"><samp>
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap -interpolate Spline -virtual-pixel edge \
+          -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}'   interpolate_spline_edge.jpg
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap -interpolate Spline -virtual-pixel White \
+          -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}'   interpolate_spline_white.jpg
+  magick \( xc:red xc:blue +append \) \
+          \( xc:yellow xc:cyan +append \) -append \
+          -size 100x100 xc: +swap -interpolate Spline -virtual-pixel Black \
+          -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}'   interpolate_spline_black.jpg
+</samp></pre>
+                </td>
+              </tr>
+            </table><a href="interpolate_spline_edge.jpg"><img src="interpolate_spline_edge.jpg" width="100" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a> <a href="interpolate_spline_white.jpg"><img src="interpolate_spline_white.jpg" width="100" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a> <a href="interpolate_spline_black.jpg"><img src="interpolate_spline_black.jpg" width="100" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a>
+          </div>
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/reminder.gif" width="20" height="16"><img src="../img_www/space.gif" width="20" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>In a real image the effects of the <a href="#virtual">Virtual Pixels</a> is only at the edges of the image. With real pixels surrounding the inter-pixel area from which the lookup is being made.</i></font></td>
+            </tr>
+          </table>Here you can see the effects of the color muting that results from the badly fitting 'spline' curves to the pixel colors. The results is generally fuzzier edges to colored areas, and thin lines. However they also will never exhibit any negative 'ringing' effect that you may get with a '<code><a href="#catrom">Catrom</a></code>' interpolation. <a name="interpolate_bgnd" id="interpolate_bgnd"></a>
+          <h3>Interpolation Background</h3>As the effects of interpolation are often over larger areas, here is an enlargement of the four main interpolation methods with white or black surrounding pixels.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre><code execute="" script="">
+  for method in   bilinear mesh catrom spline  ; do
+    for vpixel in   white black  ; do
+      magick \( xc:red xc:blue +append \) \
+              \( xc:yellow xc:cyan +append \) -append \
+         -size 100x100 xc: +swap -interpolate $method -virtual-pixel $vpixel \
+         -fx 'v.p{3*i/(w-1)-1, 3*j/(h-1)-1}' ip_area_${method}_$vpixel.jpg
+    done
+  done
+</code></pre>
+                </td>
+              </tr>
+            </table>
+            <table cellspacing="10">
+              <tr>
+                <td>
+                  <a href="ip_area_bilinear_white.jpg"><img src="ip_area_bilinear_white.jpg" width="100" height="100" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_area_mesh_white.jpg"><img src="ip_area_mesh_white.jpg" width="100" height="100" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_area_catrom_white.jpg"><img src="ip_area_catrom_white.jpg" width="100" height="100" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_area_spline_white.jpg"><img src="ip_area_spline_white.jpg" width="100" height="100" align="middle" vspace="2" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <a href="ip_area_bilinear_black.jpg"><img src="ip_area_bilinear_black.jpg" width="100" height="100" align="middle" vspace="0" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_area_mesh_black.jpg"><img src="ip_area_mesh_black.jpg" width="100" height="100" align="middle" vspace="0" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_area_catrom_black.jpg"><img src="ip_area_catrom_black.jpg" width="100" height="100" align="middle" vspace="0" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="ip_area_spline_black.jpg"><img src="ip_area_spline_black.jpg" width="100" height="100" align="middle" vspace="0" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <th>Bilinear</th>
+                <th>Mesh</th>
+                <th>Catrom</th>
+                <th>Spline</th>
+              </tr>
+            </table>
+          </div>As you can see the surrounding background color has no real effect for '<code><a href="#bilinear">bilinear</a></code>' interpolated colors. It looks like it is just overlaid onto whatever background color is present. You can however see how '<code><a href="#mesh">mesh</a></code>' generates stronger sharper edges, but can decide to flip the diagonal depending on the surrounding color, when it is involved at the image edges. Look at the join between red and blue, between the white and black backgrounds to see this 'flip'. The interpolated curve for '<code><a href="#catrom">catrom</a></code>' and '<code><a href="#spline">spline</a></code>' is effected by the surrounding pixels. Particularly in the test cases involving absolute colors. And finally '<code><a href="#spline">spline</a></code>' interpolation is really just gussian-like blurring of the image (using a sigma of 0.65). Enough blurring to eliminate any 'ringing' or aliasing effect, though typically it is too blurry for most uses. See <a href="../filter/#gaussian">Gaussian Filters</a>. <a name="interpolate_line" id="interpolate_line"></a>
+          <h3>Interpolation of a Rotated Line</h3>Here I demonstrate the various interpolation methods by creating an image of a vertical line, and using an affine distortion to rotate the line by 17 degrees, then enlarging the view so you can see the anti-aliasing pixels generated.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre><code execute="" script="">
+  magick -size 10x20 xc: -draw 'line 4,0 4,20' \
+          -scale 50x100 ip_line_none.gif
+  for method in integer nearest bilinear mesh catrom spline;  do
+    magick -size 10x20 xc: -draw 'line 5,0 5,20' \
+            -interpolate $method -filter point -distort SRT 17 \
+            -scale 50x100 ip_line_${method}.gif
+  done
+</code></pre>
+                </td>
+              </tr>
+            </table>
+            <table cellspacing="10">
+              <tr valign="top">
+                <th>
+                  <a href="ip_line_none.gif"><img src="ip_line_none.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Un-Rotated
+                </th>
+                <th><img src="../img_www/right.gif" width="20" height="20" align="middle" vspace="50" hspace="0" alt="==&gt;"></th>
+                <th>
+                  <a href="ip_line_integer.gif"><img src="ip_line_integer.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Integer
+                </th>
+                <th>
+                  <a href="ip_line_nearestneighbor.gif"><img src="ip_line_nearestneighbor.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Nearest
+                </th>
+                <th>
+                  <a href="ip_line_bilinear.gif"><img src="ip_line_bilinear.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Bilinear
+                </th>
+                <th>
+                  <a href="ip_line_mesh.gif"><img src="ip_line_mesh.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Mesh
+                </th>
+                <th>
+                  <a href="ip_line_catrom.gif"><img src="ip_line_catrom.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Catrom
+                </th>
+                <th>
+                  <a href="ip_line_spline.gif"><img src="ip_line_spline.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Spline
+                </th>
+              </tr>
+            </table>
+          </div>As you can see the direct color lookup methods '<code>Interger</code>' and '<code>NearestNeighbor</code>' produces a highly aliased result, but only use the original colors found in the image. The main difference between the two is that '<code>Interger</code>' tends to push the resulting image down and left by half a pixel. The '<code>Bilinear</code>', '<code>Mesh</code>' and '<code>Catrom</code>' generally produce very good and simular results (more on that later), with the latter producing a very sharp rotated line. Any of these is generally regarded as a good solution. The '<code>Spline</code>' interpolation methods, produces a distinct blurring of thin lines, so as to remove aliasing effects. However '<code>Spline</code>' tends to over blur the results, and really more suited to smoothing gradients, rather than rotated lines.
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/reminder.gif" width="20" height="16"><img src="../img_www/space.gif" width="20" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>The special setting "<code><a href="#filter">-filter</a> point</code>" is in the above example is used to ensure that <a href="../distorts/#distort">Distort Operator</a> only uses single 'point' interpolation in determining the final pixel color. Without it an <a href="../distorts/#area_resample">Area Resampling</a> be used instead of <a href="../distorts/#lookup">Interpolated Lookup</a>, though that also produces very good results.</i></font></td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/reminder.gif" width="20" height="16"><img src="../img_www/space.gif" width="20" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>Note that I did not use the "<code><a href="../option_link.cgi?rotate">-rotate</a></code>" operator for these examples, as that operator uses a Pixel Shearing method to <a href="../warping/#rotate">Rotate</a> Images. As a result pixel interpolation is not used.<br>
+              <br>
+              See <a href="../warping/#rotate_line">Rotating a Thin Line</a> for an example of using the <code><a href="../option_link.cgi?rotate">-rotate</a></code>" operator in this way, and the resulting pixel level effects.<br>
+              <br>
+              Update: As of IMv7.7.3-4 the rotate operator is now internally using <a href="../distorts/#distort">Distort Operator</a>, so the above many no longer be true.<br>
+              <br></i></font></td>
+            </tr>
+          </table><a name="interpolate_edge" id="interpolate_edge"></a>
+          <h3>Interpolation of a Rotated Edge</h3>The results have a slight difference when the edge of an area is being distorted, compared to that of a single line of pixels.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre><code execute="" script="">
+  magick -size 10x20 xc: -draw 'rectangle 0,0 4,19' \
+          -scale 50x100 ip_edge_none.gif
+  for method in  integer nearest bilinear mesh catrom spline; do
+    magick -size 10x20 xc: -draw 'rectangle 0,0 4,19' \
+            -interpolate $method -filter point  -distort SRT -17 \
+            -scale 50x100 ip_edge_${method}.gif
+  done
+</code></pre>
+                </td>
+              </tr>
+            </table>
+            <table cellspacing="10">
+              <tr valign="top">
+                <th>
+                  <a href="ip_edge_none.gif"><img src="ip_edge_none.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Un-Rotated
+                </th>
+                <th><img src="../img_www/right.gif" width="20" height="20" align="middle" vspace="50" hspace="0" alt="==&gt;"></th>
+                <th>
+                  <a href="ip_edge_integer.gif"><img src="ip_edge_integer.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Integer
+                </th>
+                <th>
+                  <a href="ip_edge_nearestneighbor.gif"><img src="ip_edge_nearestneighbor.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Nearest
+                </th>
+                <th>
+                  <a href="ip_edge_bilinear.gif"><img src="ip_edge_bilinear.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Bilinear
+                </th>
+                <th>
+                  <a href="ip_edge_mesh.gif"><img src="ip_edge_mesh.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Mesh
+                </th>
+                <th>
+                  <a href="ip_edge_catrom.gif"><img src="ip_edge_catrom.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Catrom
+                </th>
+                <th>
+                  <a href="ip_edge_spline.gif"><img src="ip_edge_spline.gif" width="50" height="100" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a><br>
+                  Spline
+                </th>
+              </tr>
+            </table>
+          </div>The above generally speaks for itself. '<code>Bilinear</code>' and '<code>Mesh</code>' produce reasonably sharp edges for general rotates, while '<code>Catrom</code>' will produce a sharper edge in the distorted image. '<code>Spline</code>' however will produce fuzzier edges. The difference between '<code>Bilinear</code>' and '<code>Mesh</code>' is extremely minor in the above cases. The two methods only really generate visible differences in cases of extreme enlargement during the distortion operation. Otherwise you will only see slight barely noticeable changes in pixel intensity.<br>
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="virtual-pixel" id="virtual-pixel"></a> <a name="virtual_pixel" id="virtual_pixel"></a> <a name="virtual" id="virtual"></a>
+          <h2>Virtual Pixels <font size="-2">Missed Image Color Lookup</font></h2>Many operators often need to look-up colors which fall outside the boundaries of the image proper. This includes the operators for <a href="../blur/#blur">Blurring Images</a>, <a href="../distorts/#distort">General Image Distortion</a>, <a href="../morphology/">Morphological and Convolution Operators</a>, the <a href="../distorts/#distort">General Distortion Operator</a>, and even the very old <a href="../warping/#implode">Implosion Operator</a>. So what color should be returned if you ask for a pixel at <code>-22,-3</code>? Such a pixel does not actually exist, but the color value returned can have far reaching effects on the overall effect on your image processing, especially the resulting colors of pixels close to the actual edge of the image. The "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting defines what IM should return when accessing a pixel outside the normal bounds of the image. <a href="../images/tree.gif"><img src="../images/tree.gif" width="32" height="32" align="right" vspace="0" hspace="5" border="1" alt="[IM Output]"></a> For example, here we use the <a href="../transform/#fx">FX DIY Operator</a> "<code><a href="../option_link.cgi?fx">-fx</a></code>" to 'lookup' and display all the pixels in and surrounding the small image so we can see what the <b>default</b> "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting returned.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:  tree.gif \
+                  -fx 'v.p[-19,-19]'  virtual_default.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_default.gif"><img src="virtual_default.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><a name="edge" id="edge"></a> '<b><code>Edge</code></b>' "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting return the color of the the closest real pixel to the 'virtual' location requested. That is, theneaered 'edge' color. This time I'll use a faster <a href="../distorts/#distort_viewport">Image Distortion with viewport</a> to show the surrounding virtual pixels, instead of the much slower <a href="../transform/#fx">FX Operator</a>. The distort method "SRT 0" does not actually distort the image result, it just looks at what pixels the image operator actual sees, especially the 'virtual' ones surrounding the source image.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Edge -filter point   -distort SRT 0 \
+          +repage  virtual_edge.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_edge.gif"><img src="virtual_edge.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><!-- <CODE EXECUTE ASSERT>
+  [ "`compare -metric PAE virtual_{default,edge}.gif null: 2>&1 |
+        sed 's/ .*//'`" != '0' ] && echo >&2 \
+    "ASSERTION FAILURE: Default Virtual Pixel setting is NOT 'edge'\!"
+</CODE> -->
+          An '<code>Edge</code>' virtual pixel setting is the default setting, so the above should be the same as the previous example. This setting generally has the most minimal impact (in terms of edge effects) when processing images. Which is also why it was chosen as the default setting. This is especially important when using <a href="../blur/#blur">Blur</a>, or other <a href="../morphology/">Morphological and Convolution</a> operators that use a 'neighbourhood' or pixels for processing. It is important to note how the color of the corner pixel, will end up completely filling the diagonally adjacent areas surrounding the actual image. This can result in the single corner pixel having a large effect on various image transformations. This 'corner' effect is especially noticeable when blurring images. <a name="tile" id="tile"></a> '<b><code>Tile</code></b>' VP setting is very useful for generating and ensuring the image processing edge effects are wrapped around the boundaries of the image.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Tile  -filter point  -distort SRT 0 \
+          +repage virtual_tile.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_tile.gif"><img src="virtual_tile.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This lets you ensure that images being worked on remain 'tileable', or become more 'tileable' as the image is modified. For further examples see <a href="../canvas/#tile_mod">Modifying Tile Images</a>. <a name="mirror" id="mirror"></a> '<b><code>Mirror</code></b>' is very similar to '<code><a href="#tile">tile</a></code>' and may be better for some effects that the default '<code><a href="#edge">edge</a></code>'.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Mirror -filter point   -distort SRT 0 \
+          +repage virtual_mirror.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_mirror.gif"><img src="virtual_mirror.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This is particularly useful to reduce the edge and corner effect of images that are being blurred. However it can also generate other effects.
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/warning.gif" width="28" height="28"><img src="../img_www/space.gif" width="12" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>Up until IM v6.5.0-1 only the images directly attached to the original image was mirrored. Other virtual copies, further away from the original remained un-mirrored (normal tile pattern). This was fixed so the whole virtual canvas space is now correctly mirror tiled, not just the neighbouring virtual copies.<br>
+              <br>
+              It only becomes important when using mirror tile with <a href="../distorts/#distort">General Distortion Operator</a> to mirror tile a very large area, such as when <a href="../distorts/#horizon">Viewing Distant Horizons</a></i></font></td>
+            </tr>
+          </table><a name="transparent" id="transparent"></a> '<b><code>Transparent</code></b>' just returns the transparent color for pixels outside the real image bounds.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif -alpha set  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Transparent  -filter point  -distort SRT 0 \
+          +repage virtual_trans.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_trans.gif"><img src="virtual_trans.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>The <a href="../basics/#alpha">Alpha 'set' Operator</a> in the above is required to ensure the image has a matte or alpha channel for the transparent color to fill in correctly. Without this setting the above could return a 'black' color instead of transparent, as the color '<code>none</code>' or 'fully-transparent black' is the default transparent color. For example, here I mistakenly turn off transparency...
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -alpha off  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Transparent -filter point  -distort SRT 0 \
+          +repage virtual_trans2.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_trans2.gif"><img src="virtual_trans2.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>The '<code>Transparent</code>' setting is particularly useful for image distortions, where the distorted image will later be 'layered' to build up larger images. For example, <a href="../distorts/#cube3d">3d Affine Cubes</a>, and <a href="../distorts/#cube3d">3d Perspective Boxes</a>. <a name="black" id="black"></a> <a name="white" id="white"></a> <a name="gray" id="gray"></a> The '<b><code>white</code></b>', '<b><code>gray</code></b>', and '<b><code>black</code></b>', settings are similar to the previous '<code>Transparent</code>' setting above. They just return that specific color for any pixel that falls out of bounds.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -alpha off  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel White -filter point  -distort SRT 0 \
+          +repage virtual_white.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_white.gif"><img src="virtual_white.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -alpha off  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Gray -filter point  -distort SRT 0 \
+          +repage virtual_gray.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_gray.gif"><img src="virtual_gray.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -alpha off  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Black -filter point  -distort SRT 0 \
+          +repage virtual_black.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_black.gif"><img src="virtual_black.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><a name="background" id="background"></a> If you want any other simple color , then you must define that color in the "<code><a href="../option_link.cgi?background">-background</a></code>" setting, and use a '<b><code>Background</code></b>' "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Background -background coral \
+          -filter point -distort SRT 0     +repage virtual_bgnd.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_bgnd.gif"><img src="virtual_bgnd.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><br>
+          <a name="horizontal_tile" id="horizontal_tile"></a> '<b><code>HorizontalTile</code></b>' VP setting was added to IM v6.4.2-6 as a special form of tiling that is useful for full 360 degree "<code><a href="../distorts/#arc">Arc</a></code>" and "<code><a href="../distorts/#polar">Polar</a></code>" distortions. The image is only tiled horizontally, while the virtual pixels above and below the tiles are set from the current "<code><a href="../option_link.cgi?background">-background</a></code>" color.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel HorizontalTile  -background coral \
+          -filter point -distort SRT 0     +repage virtual_horizontal.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_horizontal.gif"><img src="virtual_horizontal.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This lets you ensure that images being transformed remain 'tileable' horizontally. For further examples see <a href="../canvas/#tile_mod">Modifying Tile Images</a>. <a name="horizontal_edge" id="horizontal_edge"></a> The '<b><code>HorizontalTileEdge</code></b>' (added in IM v6.5.0-1) also tiles the image horizontally across the virtual space, but replicates the side edge pixels across the other parts of the virtual canvas space.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel HorizontalTileEdge  -background coral \
+          -filter point -distort SRT 0     +repage virtual_horizontal_edge.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_horizontal_edge.gif"><img src="virtual_horizontal_edge.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>These two VP methods were added for better handling of full circle '<code><a href="../distorts#arc">Arc</a></code>' and '<code><a href="../distorts#polar">Polar</a></code>' distortions where the en-circled image 'wraps around' and joins together end to end.<br>
+          <a name="vertical_tile" id="vertical_tile"></a> Simularly the '<b><code>VerticalTile</code></b>' VP setting (also added IM v6.4.2-6, for completeness) as a tiles the image vertially only, with the current "<code><a href="../option_link.cgi?background">-background</a></code>" color used to fill in the sides of the image.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel VerticalTile  -background coral \
+          -filter point -distort SRT 0     +repage virtual_vertical.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_vertical.gif"><img src="virtual_vertical.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><a name="vertical_edge" id="vertical_edge"></a> The '<b><code>VerticalTileEdge</code></b>' was added in IM v6.5.0-1, and replicates the side edge pixels across the rest of the virtual canvas space.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel VerticalTileEdge  -background coral \
+          -filter point -distort SRT 0     +repage virtual_vertical_edge.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_vertical_edge.gif"><img src="virtual_vertical_edge.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><a name="checker_tile" id="checker_tile"></a> In IM v6.5.0-1 '<b><code>CheckerTile</code></b>' was added to tile an image as if filling in a checkerboard pattern. The other squares are simply filled with the background color (which may be transparent).
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel CheckerTile  -background coral \
+          -filter point -distort SRT 0     +repage virtual_checker.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_checker.gif"><img src="virtual_checker.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>By making background transparent and overlaying that image over an another fully-tiled image same size you can layer the two tilings to produce an interleaved checkerboard pattern of the two images.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 96x96 tile:balloon.gif \
+          \( tree.gif -alpha set  -set option:distort:viewport 96x96 \
+             -virtual-pixel CheckerTile  -background none \
+             -filter point -distort SRT 0 \) \
+          -flatten  virtual_checker_2.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_checker_2.gif"><img src="virtual_checker_2.gif" width="96" height="96" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><br>
+          There also a couple of more unusual "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" settings. <a name="random" id="random"></a> '<b><code>random</code></b>', just picks a random pixel from the image to use.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 70x70-19-19 \
+          -virtual-pixel Random -filter point   -distort SRT 0 \
+          +repage virtual_random.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_random.gif"><img src="virtual_random.gif" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This is often used with "<code><a href="../option_link.cgi?blur">-blur</a></code>" to generate rough mottled average image color in the resulting edge effects it produces. Note that the pixel value is not consistant, and will produce a different effect for each lookup, and even each run of the operation, unless the random number generator is given an initial "<code><a href="../option_link.cgi?seed">-seed</a></code>". This is especially bad when used with <a href="../convolve">Convolution</a> or <a href="../morphology">Morphology</a> image processing, as the each lookup along the edge of the image will contribute a different value even though the same pixel lookup was used. I have however found the random pattern to be very good when generating a <a href="../distorts/#horizon">Perspective Horizion</a> as the pattern shows a more blurred result as you get closer to the horizon. The bluring gives the the resulting random texture a depth that would otherwise not be visible if using a simple solid color.<br>
+          <a name="dither" id="dither"></a> '<b><code>dither</code></b>' however returns an ordered dithered pattern of colors basied on pixels within 32x32 pixels of the requested position.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr valign="bottom">
+              <td width="100%" align="justify">
+                That means that once you have progressed beyond 32 pixels from the image, the result will be again just the corner pixel color of the image. It is a bit like a merger of '<code><a href="#edge">edge</a></code>' and '<code><a href="#random">random</a></code>'.
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif  -set option:distort:viewport 120x120-44-44 \
+          -virtual-pixel Dither -filter point  -distort SRT 0 \
+          +repage virtual_dither.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="virtual_dither.gif"><img src="virtual_dither.gif" width="120" height="120" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>In the above you can see that the yellow from the sun in one corner of this 32x32 pixel image manages to be selected all the way up the far lower-right corner, but no further. That is, the limit of the 32 pixel 'neighbourhood' for the ordered dither color selection. If this image was larger, the yellow sun color would not reach the other corners. This pattern is not 'random' and will always generate the same result for the same image. You could think of it as a more ordered form of '<code><a href="#random">random</a></code>' VP close into the image, but becomes more like '<code><a href="#edge">edge</a></code>' like in effect once you process further than 32 pixels from the image proper.<br>
+          <a name="virtual_infinities" id="virtual_infinities"></a>
+          <h4>Virtual Pixel and Infinities</h4>You can see the effects of "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" much more clearly in the results the <a href="../distorts/#distort">General Distortion Operator</a>, and especially with a <a href="../distorts/#perspective">Perspective</a> distortion, allowing you to create a distorted view out toward an infinite distance. For example, here I show the results of a "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a> dither</code>" settings, on a perspective view of the tree. This shows how this setting can effect the pixels returned all the way out to infinity.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre class="bg-light text-dark mx-4"><samp>
+  magick tree.gif -mattecolor DodgerBlue   -virtual-pixel dither \
+          -set option:distort:viewport  150x100-50-50 \
+          -distort perspective '0,0 9,0  31,0 38,0  0,31 0,18  31,31, 40,18' \
+          perspective_dither.gif
+</samp></pre>
+                </td>
+              </tr>
+            </table><a href="perspective_dither.gif"><img src="perspective_dither.gif" width="150" height="100" align="middle" vspace="2" hspace="15" border="1" alt="[IM Output]"></a>
+          </div>Try the above with other "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" settings to get a better idea of how they work. Some other examples can also be seen in <a href="../distorts/#horizon">Viewing Distant Horizons</a>. Note that the 'sky' in the above view is actually generated from the "<code><a href="../option_link.cgi?mattecolor">-mattecolor</a></code>" setting, which is used by distort to prepresent areas that are 'Invalid', in this case the 'sky' of a perspective distortion. It did not come from the "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting. <a name="virtual_colors" id="virtual_colors"></a>
+          <h4>Virtual Pixel Colors</h4>None of the "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" methods actually return a different or composite color to what is already present within the image, unless that color was specifically requested via one of the solid color methods: '<code><a href="#background">background</a></code>', '<code><a href="#transparent">transparent</a></code>', '<code><a href="#background">background</a></code>', '<code><a href="#black">black</a></code>', '<code><a href="#white">white</a></code>', '<code><a href="#gray">gray</a></code>'; That is, no new colors are ever generated, though one specific color could be added (two for the <a href="../distorts/#distort">General Distortion Operator</a>). Of course if the requested pixels are being <a href="#interpolate">Pixel Interpolated</a>, or <a href="../distorts/#area_resample">Area Resampled</a>, such as in the perspective distorted view above, then those methods may merge the colors returned according ot the "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting chosen. <a name="virtual_examples" id="virtual_examples"></a>
+          <h4>Virtual Pixel Effects on Operators</h4>Here I explore the effects of the effects of "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting with various operators. "<code><a href="../option_link.cgi?blur">-blur</a></code>"...
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:lightblue  -fill black -draw 'circle 35,65 25,55' \
+          -virtual-pixel edge   -blur 0x8     vp_blur.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_blur.png"><img src="vp_blur.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+    magick -size 70x70 xc:lightblue  -fill black -draw 'circle 35,65 25,55' \
+            -virtual-pixel mirror  -blur 0x8  vp_blur_2.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_blur_2.png"><img src="vp_blur_2.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>Note in the following how the image can be cross contaminated using "<code><a href="../option_link.cgi?blur">-blur</a></code>" with the "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting of '<code>tile</code>'. Of course if the image was tilable to start with this may be desired.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:lightblue  -fill black -draw 'circle 35,65 25,55' \
+          -virtual-pixel tile  -blur 0x8  vp_blur_3.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_blur_3.png"><img src="vp_blur_3.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>Setting a specific color for the "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" in the image has some very interesting effects and posibilities.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:lightblue  -fill black -draw 'circle 35,65 25,55' \
+          -virtual-pixel background  -background blue \
+          -blur 0x8     vp_blur_4.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_blur_4.png"><img src="vp_blur_4.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:lightblue  -fill black -draw 'circle 35,65 25,55' \
+          -virtual-pixel transparent  -channel RGBA  -blur 0x8 \
+          -background red  -flatten       vp_blur_5.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_blur_5.png"><img src="vp_blur_5.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>Note how the '<code>red</code>' background I placed behind the image is visible around the edges where the resulting blurred image has made use of the virtual pixels that surround the real pixels of the image. "<code><a href="../option_link.cgi?gaussian">-gaussian</a></code>" has the same basic results as "<code><a href="../option_link.cgi?blur">-blur</a></code>", which is understandable as they are mathematically identical.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:lightblue  -fill black -draw 'circle 35,65 25,55' \
+          -virtual-pixel background   -background blue \
+          -gaussian 0x8     vp_gaussian.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_gaussian.png"><img src="vp_gaussian.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>However "<code><a href="../option_link.cgi?radial-blur">-radial-blur</a></code>" (really a rotational blur), produces more interesting border effects...
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:lightblue \
+     -virtual-pixel background  -background blue \
+     -radial-blur 0x30    vp_radial.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_radial.png"><img src="vp_radial.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>This last with the default 'transparent edge' will probably generate a smooth edge, when used with larger radial blur angles. It may produce a cleaner 'vignette' or soft edging overlay image, than other techniques. See <a href="../thumbnails/#soft_edges">Soft and Blurred Edges</a> for examples of using this effect. Note that "<code><a href="../option_link.cgi?motion-blur">-motion-blur</a></code>" can be very badly effected by edge effects.
+          <table border="0" cellspacing="0" cellpadding="0" width="90%" align="center">
+            <tr valign="top">
+              <td><img src="../img_www/reminder.gif" width="20" height="16"><img src="../img_www/space.gif" width="20" height="16"></td>
+              <td align="justify" width="100%"><font size="-1"><i>It is made worse by the fact that "<code><a href="../option_link.cgi?motion-blur">-motion-blur</a></code>" does not current understand the use of "<code><a href="../option_link.cgi?channel">-channel</a></code>" for limited its effects to specific channels.</i></font></td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:none  -virtual-pixel edge \
+     -fill yellow  -stroke red  -strokewidth 3 -draw 'circle 45,55 35,45' \
+     -channel RGBA -motion-blur 0x12+65  vp_motion.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_motion.png"><img src="vp_motion.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:none  -virtual-pixel transparent  \
+     -fill yellow  -stroke red  -strokewidth 3  -draw 'circle 45,55 35,45' \
+     -channel RGBA -motion-blur 0x12+65  vp_motion_2.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_motion_2.png"><img src="vp_motion_2.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick -size 70x70 xc:none  -virtual-pixel background -background blue \
+     -fill yellow  -stroke red  -strokewidth 3  -draw 'circle 45,55 35,45' \
+     -channel RGBA -motion-blur 0x12+65  vp_motion_3.png
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="vp_motion_3.png"><img src="vp_motion_3.png" width="70" height="70" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><a name="virtual_implode" id="virtual_implode"></a>
+          <h3>Implosion Effects of Virtual Pixels</h3>Here are some more interesting examples of various large value (&gt;1.0) implosions using various "<a href="../option_link.cgi?virtual-pixel"><code>-virtual-pixel</code></a>" settings.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre><code execute="" script="">
+  for v in edge tile mirror dither random gray; do
+    for i in 2 5 10 50 500; do \
+      magick koala.gif -virtual-pixel $v \
+              -implode $i  implode_${v}_${i}.gif
+    done
+  done
+</code></pre>
+                </td>
+              </tr>
+            </table>
+            <table>
+              <tr valign="bottom">
+                <th>Implode</th>
+                <th>Edge</th>
+                <th>Tile</th>
+                <th>Mirror</th>
+                <th>Dither</th>
+                <th>Random</th>
+                <th>Gray</th>
+              </tr>
+              <tr>
+                <th>2</th>
+                <td>
+                  <a href="implode_edge_2.gif"><img src="implode_edge_2.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_tile_2.gif"><img src="implode_tile_2.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_mirror_2.gif"><img src="implode_mirror_2.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_dither_2.gif"><img src="implode_dither_2.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_random_2.gif"><img src="implode_random_2.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_gray_2.gif"><img src="implode_gray_2.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <th>5</th>
+                <td>
+                  <a href="implode_edge_5.gif"><img src="implode_edge_5.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_tile_5.gif"><img src="implode_tile_5.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_mirror_5.gif"><img src="implode_mirror_5.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_dither_5.gif"><img src="implode_dither_5.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_random_5.gif"><img src="implode_random_5.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_gray_5.gif"><img src="implode_gray_5.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <th>10</th>
+                <td>
+                  <a href="implode_edge_10.gif"><img src="implode_edge_10.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_tile_10.gif"><img src="implode_tile_10.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_mirror_10.gif"><img src="implode_mirror_10.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_dither_10.gif"><img src="implode_dither_10.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_random_10.gif"><img src="implode_random_10.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_gray_10.gif"><img src="implode_gray_10.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <th>50</th>
+                <td>
+                  <a href="implode_edge_50.gif"><img src="implode_edge_50.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_tile_50.gif"><img src="implode_tile_50.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_mirror_50.gif"><img src="implode_mirror_50.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_dither_50.gif"><img src="implode_dither_50.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_random_50.gif"><img src="implode_random_50.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_gray_50.gif"><img src="implode_gray_50.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+              <tr>
+                <th>500</th>
+                <td>
+                  <a href="implode_edge_500.gif"><img src="implode_edge_500.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_tile_500.gif"><img src="implode_tile_500.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_mirror_500.gif"><img src="implode_mirror_500.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_dither_500.gif"><img src="implode_dither_500.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_random_500.gif"><img src="implode_random_500.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+                <td>
+                  <a href="implode_gray_500.gif"><img src="implode_gray_500.gif" width="75" height="75" align="middle" vspace="5" hspace="2" border="1" alt="[IM Output]"></a>
+                </td>
+              </tr>
+            </table>
+          </div>The 'dotty' nature of the above results is a direct result of the direct 'interpolated sampling' used by the "<a href="../option_link.cgi?implode"><code>-implode</code></a>" operator. See <a href="../distorts/#lookup">Direct Interpolated Lookup</a>. This may change in a future version of IM, using <a href="../distorts/#area_resample">Area Resampling</a>. For now you will need to use a <a href="../distorts/#super_sample">Super Sampling</a> technique to improve results. The '<code>edge</code>' setting is the more usual and default setting that is use, to avoid most of the weird effects. The others (exept for '<code>background</code>' essentually produce a replicated pattern from the existing pixels in the image, and effects are highly variable. Also note how the argument requires an expotential increase in size for simular increases in effects. Also for arguments larger than about 200 a black circle may appear in the center of the resulting image. This is caused by the computers mathematical limit being reached. Using such large values is an effect we do not recommend you use.
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="spots" id="spots"></a>
+          <h2>Random Spots of Solid Color</h2>By blurring a "<code>plasma:fractal</code>" canvas, then reducing the colors to very low values you can produce simple images containing random areas of different colors. However the results are highly variable depending on the final number of colors requested and the <a href="#virtual">Virtual Pixel</a> setting (see above). I had two choices for the initial random image in this experiment. A <a href="../canvas/#plasma_fractal">Fractal Plasma Image</a>, and a <a href="../canvas/#random">Random Noise Image</a>. The <a href="../canvas/#random">Random Image</a> will by its nature produce a image which can (with a 'tile "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting) create a better tilable image. Where as the <a href="../canvas/#plasma_fractal">Plasma Image</a> tends to create rectangular like edges to its spots of color. On the other hand the <a href="../canvas/#plasma_fractal">Plasma Image</a> produces fairly nice pastel colored spots, or blobs. While the <a href="../canvas/#random">Random Image</a> tends to produce horrible shades of mid-tone gray. because of this I chose to use the <a href="../canvas/#plasma_fractal">Plasma Image</a> for these experiments.
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="90%" bgcolor="#F8F8F8">
+              <tr>
+                <td>
+                  <pre class="bg-light text-dark mx-4"><samp>
+<br>  magick -size 80x80 plasma:fractal -normalize   spot_start.gif
+  #magick -size 80x80 xc: +noise Random  \
+  #        -virtual-pixel tile  -blur 0x5  -normalize  spot_start.gif
+</samp><!--
+--><code execute="" script="">
+  for n in 2 3 4 5; do
+    for v in  edge mirror tile white black; do
+      magick spot_start.gif -virtual-pixel $v -blur 0x10 \
+              +dither -colors $n  spot${n}_${v}.gif
+    done
+  done
+</code></pre>
+                </td>
+              </tr>
+            </table>
+            <table>
+              <tr valign="bottom">
+                <th>Num Colors</th>
+                <th>Edge</th>
+                <th>Mirror</th>
+                <th>Tile</th>
+                <th>White</th>
+                <th>Black</th>
+              </tr>
+              <tr>
+                <th>2</th>
+                <th>
+                  <a href="spot2_edge.gif"><img src="spot2_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot2_mirror.gif"><img src="spot2_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot2_tile.gif"><img src="spot2_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot2_white.gif"><img src="spot2_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot2_black.gif"><img src="spot2_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>3</th>
+                <th>
+                  <a href="spot3_edge.gif"><img src="spot3_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot3_mirror.gif"><img src="spot3_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot3_tile.gif"><img src="spot3_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot3_white.gif"><img src="spot3_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot3_black.gif"><img src="spot3_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>4</th>
+                <th>
+                  <a href="spot4_edge.gif"><img src="spot4_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot4_mirror.gif"><img src="spot4_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot4_tile.gif"><img src="spot4_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot4_white.gif"><img src="spot4_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot4_black.gif"><img src="spot4_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>5</th>
+                <th>
+                  <a href="spot5_edge.gif"><img src="spot5_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot5_mirror.gif"><img src="spot5_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot5_tile.gif"><img src="spot5_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot5_white.gif"><img src="spot5_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot5_black.gif"><img src="spot5_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+            </table>
+          </div>The first three images has very specific effects on how the color 'spots' interact with the edges of the image. '<code>Edge</code>' and '<code>Mirror</code>' tends to cause the colors to join the edges at 90 degree angles. A '<code>Random</code>' or '<code>Dither</code>' setting has simular but stronger attachments of the color blobs to the edges of the image, though both also introduces some sharp edge effects close to the image edges. A second blur-quantize cycle may be needed to clean up and smooth the edges of the spots. The '<code>Tile</code>' setting tends to allow the spots to wrap around the image. However as the source <a href="../canvas/#plasma_fractal">Plasma</a> image is not itself tilable, the result is a general color change near the rectangular edge. If the tilable <a href="../canvas/#random">Random</a> image was used as the source, then the spots of colors would completely disregard the borders of the image. By using a '<code>White</code>' or '<code>Black</code>' background virtual-pixel setting, the spots of color tend to be centered in the image proper. How well this 'centering' occurs depends on just how different original random image was relative to the 'background color' used. The size of the "<code><a href="../option_link.cgi?blur">-blur</a></code>" basically effects the size and smoothness of the blobs. A small blur producing lots of small spots, a large blur, such as we used in the above, producing a single more circular spot of color.<br>
+          You can also produce a completely different set of colors and interactions by using a different color quantization color space. For example, here I repeat the last example (reducing to 5 colors) from above but use some more unusal "<code><a href="../option_link.cgi?quantize">-quantize</a></code>" color spaces for color selection. (See <a href="../quantize/#quantize">Color Quantization and ColorSpace</a>)
+          <div align="center">
+            <!--
+<table class="table table-sm table-hover table-striped" CELLSPACING=0 CELLPADDING=5 width="90%" bgcolor="#f8f8f8">
+<TR><TD><PRE><CODE EXECUTE SCRIPT>
+  for s in   RGB YIQ HSL XYZ OHTA; do
+    for v in   edge mirror tile white black; do
+      magick spot_start.gif -virtual-pixel $v -blur 0x10 \
+              +dither -quantize $s -colors 5 spot_${s}_${v}.gif
+    done
+  done
+</samp></pre></TD></TR></TABLE>
+-->
+            <table>
+              <tr valign="bottom">
+                <th>Color Space</th>
+                <th>Edge</th>
+                <th>Mirror</th>
+                <th>Tile</th>
+                <th>White</th>
+                <th>Black</th>
+              </tr>
+              <tr>
+                <th>RGB</th>
+                <th>
+                  <a href="spot_RGB_edge.gif"><img src="spot_RGB_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_RGB_mirror.gif"><img src="spot_RGB_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_RGB_tile.gif"><img src="spot_RGB_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_RGB_white.gif"><img src="spot_RGB_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_RGB_black.gif"><img src="spot_RGB_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>YIQ</th>
+                <th>
+                  <a href="spot_YIQ_edge.gif"><img src="spot_YIQ_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_YIQ_mirror.gif"><img src="spot_YIQ_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_YIQ_tile.gif"><img src="spot_YIQ_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_YIQ_white.gif"><img src="spot_YIQ_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_YIQ_black.gif"><img src="spot_YIQ_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>HSL</th>
+                <th>
+                  <a href="spot_HSL_edge.gif"><img src="spot_HSL_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_HSL_mirror.gif"><img src="spot_HSL_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_HSL_tile.gif"><img src="spot_HSL_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_HSL_white.gif"><img src="spot_HSL_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_HSL_black.gif"><img src="spot_HSL_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>XYZ</th>
+                <th>
+                  <a href="spot_XYZ_edge.gif"><img src="spot_XYZ_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_XYZ_mirror.gif"><img src="spot_XYZ_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_XYZ_tile.gif"><img src="spot_XYZ_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_XYZ_white.gif"><img src="spot_XYZ_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_XYZ_black.gif"><img src="spot_XYZ_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+              <tr>
+                <th>OHTA</th>
+                <th>
+                  <a href="spot_OHTA_edge.gif"><img src="spot_OHTA_edge.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_OHTA_mirror.gif"><img src="spot_OHTA_mirror.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_OHTA_tile.gif"><img src="spot_OHTA_tile.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_OHTA_white.gif"><img src="spot_OHTA_white.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+                <th>
+                  <a href="spot_OHTA_black.gif"><img src="spot_OHTA_black.gif" width="80" height="80" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+                </th>
+              </tr>
+            </table>
+          </div>Remember all the above images were all generated from the same randomized source image. The different effects you see are the results of different ways reducing the number of colors in the image. You can see how the "<code><a href="../option_link.cgi?virtual-pixel">-virtual-pixel</a></code>" setting defining what pixel colors blur sees the areas beyond the image bounds has a strong influence on shapes of the color areas.
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="annotate" id="annotate"></a>
+          <h2>Annotate Argument Usage</h2>IM Version 6 provided a new command line option for text drawing "<code><a href="../option_link.cgi?annotate">-annotate</a></code>" which bypasses the older "<code><a href="../option_link.cgi?draw">-draw</a></code>" method to use the <code>Annotate()</code> API directly. This provides some new features to command line users. For this example I choose Arial Black font, for its straight lettering so that the rotation should be quite clear.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+    magick -font ArialB -pointsize 24 -gravity center \
+            -size 55x55 xc:white -annotate 0x0+0+0 'Text' \
+            annotate_source.jpg
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="annotate_source.jpg"><img src="annotate_source.jpg" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>The format of this option is...
+          <pre><b>  -annotate {<i>SlewX</i>}x{<i>SlewY</i>}+{<i>X</i>}+{<i>Y</i>}<!--
+--> 'Text String' </b></pre>The <i>X</i> and <i>Y</i> offset of the above is the gravity effected position of the annotated text that is to be drawn. However the <i>SlewX</i> and <i>SlewY</i> represents a form of rotation. If both of these values are the same then a normal rotation is performed. But if they differ, some very interesting effects can result..
+          <div align="center">
+            <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="0">
+              <tr>
+                <td>
+                  <a href="annotate_montage.jpg"><img src="annotate_montage.jpg" align="middle" vspace="2" hspace="2" border="0" alt="[IM Output]"></a>
+                </td>
+              </tr>
+            </table>
+          </div>As you can see some of the arguments resulted in no text being drawn, basically when the text would have been drawn all in a single line. This is to be expected. However you can see that we can draw the text flipped, flopped, rotated, italicized, in all manner of ways. A most useful image operator.
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="splice" id="splice"></a>
+          <h2>Splice: Creating a New Image Operator</h2>Just after the first release of ImageMagick version 6, a discussion developed in response to a question. The question involved adding extra space (rows and columns) into the middle of an image. The example below is the complex set of commands that resulted from this discussion, using the heavy magic of IM version 6, and detailed exactly what should be done. From this example the "<code><a href="../option_link.cgi?splice">-splice</a></code>" operator was created (for details see examples in <a href="../crop/#splice">Splicing and Chopping Rows and Columns into Images</a>). As such this command line is the defining operations of this new command, and both should work in exactly the same way.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick rose: -size 20x10 xc:blue   -background blue \
+          \( -clone 0  -crop 40x0 +repage +clone -insert 1 +append \) \
+          -swap 0,-1 +delete +repage \
+          \( -clone 0  -crop 0x30 +repage +clone -insert 1 -append \) \
+          -delete 0 -delete 0 +repage  splice_rose_seq.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="splice_rose_seq.gif"><img src="splice_rose_seq.gif" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>In the above we split up the rose into lots of vertical slices, then insert a spacing image into that sequence, before appending them all together again. Basically we added a vertical column of pixels into the rose image. Then replacing our original image with the modified one, we repeated the same operations, but horizontally. A little clean up of working images and we are done. This example also highlighted to the mailing list the usefulness of the new ordered command line handling and the image sequence operations of version 6 ImageMagick. In older releases of IM, this would have required a large number of separate commands and temporary images to achieve the same result.
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="border" id="border"></a>
+          <h2>Border, Frame, and the use of BorderColor</h2>There is a debate, that "<code><a href="../option_link.cgi?bordercolor">-bordercolor</a></code>" should only be used to only add a border to images with the "<code><a href="../option_link.cgi?border">-border</a></code>" or "<code><a href="../option_link.cgi?splice">-frame</a></code>". That is, many users think it should <i>not</i> be used to set the background behind images with transparency. For example, under IM this sets the transparent areas of the star image to the "<code><a href="../option_link.cgi?bordercolor">-bordercolor</a></code>" and completely ignores the "<code><a href="../option_link.cgi?background">-background</a></code>" color setting.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick star.gif -bordercolor LimeGreen   -background Gold \
+                   -border 10       star_border.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="star_border.gif"><img src="star_border.gif" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table><!-- <CODE EXECUTE ASSERT>
+  magick identify -verbose star_border.gif | grep Alpha: >/dev/null && echo >&2 \
+    "ASSERTION FAILURE: Border did not flatten image transparency\!"
+</CODE> -->
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="bottom">
+              <td width="100%" align="justify">
+                The main reason "<code><a href="../option_link.cgi?bordercolor">-bordercolor</a></code>" is used to set the background of transparenent images is because this makes "<code>magick montage</code>" come out in a nice way when given a random set of images which could contain transparencies, with minimal settings from the user.
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+    magick montage star.gif  -frame 6  -geometry '64x64+5+5&gt;' star_montage.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td align="center">
+                <a href="star_montage.gif"><img src="star_montage.gif" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>If the transparency was preserved then the "<code>magick montage</code>" results above would not look nearly as good.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr valign="bottom">
+              <td width="100%" align="justify">
+                That does not mean that you can't preserve the transparency of images when using "<code><a href="../option_link.cgi?border">-border</a></code>" or "<code><a href="../option_link.cgi?splice">-frame</a></code>" operators. It just means you need to supply an extra "<code><a href="../option_link.cgi?compose">-compose</a></code>" setting to tell IM to preserve the transparency.
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick star.gif  -bordercolor LimeGreen \
+          -compose Copy  -border 10   star_border_copy.gif
+  magick montage star.gif  -bordercolor LimeGreen \
+          -compose Copy -background None    -frame 6 \
+          -geometry '64x64+0+0&gt;'   star_montage_copy.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td align="center">
+                <a href="star_border_copy.gif"><img src="star_border_copy.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a><br>
+                <a href="star_montage_copy.gif"><img src="star_montage_copy.gif" align="middle" vspace="0" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>For more information on preserving an images transparent background, while adding a "<code><a href="../option_link.cgi?border">-border</a></code>" or "<code><a href="../option_link.cgi?splice">-frame</a></code>", see <a href="../crop/#border">adding borders</a>. and for "<code>magick montage</code>", see <a href="../montage/#bg">montage background and transparency handling examples</a>. One alturnative that has been suggested was to set image area background in these operators to the "<code><a href="../option_link.cgi?background">-background</a></code>" color, but this will interfer with its use in "<code>magick montage</code>". You can of course always <a href="../masking/#remove">Remove the Transparency</a> of the image yourself, before any extra frame or border is added. In that case the use of "<code>-compose Copy</code>" becomes irrelevent.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick montage star.gif -background Gold -alpha remove \
+          -frame 6  -geometry '64x64+5+5&gt;' -size 16x16 \
+          -bordercolor LimeGreen  -background SeaGreen \
+          star_montage_texture.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="star_montage_texture.gif"><img src="star_montage_texture.gif" align="middle" vspace="2" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+          </table>It is just a lot easier to use a "<code><a href="../option_link.cgi?compose">-compose</a></code>" setting, to preserve the transparency, rather that have border preserve it and cause other problems. It may not be obvious to new users, but then that is what these example pages are all about.
+          <hr>
+          <!-- ---------------------------------------------------------------- -->
+          <a name="list_test" id="list_test"></a>
+          <h2>List Operator Testing</h2>All the following commands should produce exactly the same image, but all images are produced in slightly different ways, demonstrating the new, IM version 6, <a href="../basics/#image_list">Image List Operators</a>.
+          <table border="0" cellspacing="0" cellpadding="0" width="100%">
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif news.gif  storm.gif  +append  list_test_01.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_01.gif"><img src="list_test_01.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( \) eye.gif news.gif  storm.gif  +append  list_test_02.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_02.gif"><img src="list_test_02.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif news.gif  storm.gif \( \) +append  list_test_03.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_03.gif"><img src="list_test_03.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( eye.gif news.gif  storm.gif \) +append  list_test_04.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_04.gif"><img src="list_test_04.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( eye.gif news.gif  storm.gif  +append \) list_test_05.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_05.gif"><img src="list_test_05.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif \( news.gif storm.gif +append \) +append list_test_06.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_06.gif"><img src="list_test_06.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( eye.gif news.gif +append \) storm.gif +append  list_test_07.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_07.gif"><img src="list_test_07.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( storm.gif -flop \) \( news.gif -flop \) \( eye.gif -flop \) \
+          +append -flop  list_test_08.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_08.gif"><img src="list_test_08.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick \( eye.gif -rotate 90 \) \( news.gif  -rotate 90 \) \
+          \( storm.gif -rotate 90 \) -append  -rotate -90   list_test_09.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_09.gif"><img src="list_test_09.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif tree.gif news.gif storm.gif   -delete 1 \
+          +append list_test_10.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_10.gif"><img src="list_test_10.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif tree.gif news.gif storm.gif  -delete -3 \
+          +append list_test_11.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_11.gif"><img src="list_test_11.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif news.gif storm.gif tree.gif   +delete \
+          +append list_test_12.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_12.gif"><img src="list_test_12.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick news.gif storm.gif eye.gif  +insert  +append list_test_13.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_13.gif"><img src="list_test_13.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif storm.gif news.gif  -insert 1  +append list_test_14.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_14.gif"><img src="list_test_14.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick news.gif eye.gif storm.gif   -swap 0,1  +append list_test_15.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_15.gif"><img src="list_test_15.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick storm.gif news.gif eye.gif   -swap 0  +append list_test_16.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_16.gif"><img src="list_test_16.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif storm.gif news.gif   +swap  +append list_test_17.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_17.gif"><img src="list_test_17.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif storm.gif news.gif   \( -clone 1 \) \
+          -delete 1   +append list_test_18.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_18.gif"><img src="list_test_18.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif -negate \( +clone -negate \) news.gif  storm.gif \
+          -delete 0   +append list_test_19.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_19.gif"><img src="list_test_19.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick storm.gif news.gif eye.gif \( -clone 2,1,0 \) \
+          -delete 2,1,0   +append  list_test_20.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_20.gif"><img src="list_test_20.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick storm.gif news.gif eye.gif \( -clone 2-0 \) \
+          -delete 0-2   +append  list_test_21.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_21.gif"><img src="list_test_21.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick {balloon,medical,present,shading}.gif  -delete 0--1 \
+          {eye,news,storm}.gif   +append  list_test_22.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_22.gif"><img src="list_test_22.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick balloon.gif -delete 0,0,0,0,0,0,0,0,0 \
+          eye.gif news.gif  storm.gif  +append  list_test_23.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_23.gif"><img src="list_test_23.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif balloon.gif news.gif storm.gif \
+          -delete 1,1,1,1,1   +append  list_test_24.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_24.gif"><img src="list_test_24.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick {balloon,medical,present,shading}.gif {eye,news,storm}.gif \
+          -delete 0--4   +append   list_test_25.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_25.gif"><img src="list_test_25.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick eye.gif news.gif storm.gif \
+          -delete 0--4   +append   list_test_26.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_26.gif"><img src="list_test_26.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr>
+            <tr>
+              <td width="100%" align="justify">
+                <table class="table table-sm table-hover table-striped" cellspacing="0" cellpadding="5" width="100%" bgcolor="#F8F8F8">
+                  <tr>
+                    <td>
+                      <pre class="bg-light text-dark mx-4"><samp>
+  magick storm.gif news.gif eye.gif -reverse +append  list_test_27.gif
+</samp></pre>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+              <td>
+                <a href="list_test_27.gif"><img src="list_test_27.gif" align="middle" vspace="5" hspace="5" border="1" alt="[IM Output]"></a>
+              </td>
+            </tr><!-- Do not forget to set number of tests below -->
+          </table><!-- <CODE EXECUTE ASSERT>
+  for i in `seq -f %02.f 2 27`; do
+    [ `compare -metric PAE list_test_$i.gif list_test_01.gif null: 2>&1 |
+           sed 's/ .*//'` != '0' ] && echo >&2 \
+      "ASSERTION FAILURE: Sequence Command Test $i failed\!"
+  done
+</CODE> -->
+        </div>
+        <hr>
+        <!-- ---------------------------------------------------------------- -->
+      </div>
+    </div>
+  </main>
+  <footer class="magick-footer">
+    <div class="container-fluid">
+      Created: 6 November 2004<br>
+      Updated: 13 March 2008<br>
+      Author: <a href="https://antofthy.gitlab.io/anthony.html">Anthony Thyssen</a>, &lt;Anthony.Thyssen@gmail.com&gt;<br>
+      Examples Generated with: <img src="version.gif" align="absmiddle" alt="[version image]"><br>
+      URL: <code>https://imagemagick.org/Usage/misc/</code>
+    </div>
+  </footer>
+</body>
+</html>
