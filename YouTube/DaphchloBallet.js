@@ -125,6 +125,10 @@ const timeSchedule = [
     "54:10", //「クロエの主題」
     "54:26.5", // 「ドルコンのグロテスクな踊り」
     "54:50", // 3拍子のヘミオラ
+    /*
+     * 終端
+     */
+    "56:52",
 ];
 
 const iframe = document.querySelector("iframe")
