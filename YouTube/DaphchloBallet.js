@@ -175,7 +175,7 @@ function searchTR(index) {
     }
 }
 
-const INTERVAL_TIME = 1000;
+const INTERVAL_TIME = 500;
 function tickHandler() {
     if (startTimeReal <= 0) {
         return ;
