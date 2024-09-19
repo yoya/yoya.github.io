@@ -157,6 +157,13 @@ function searchTimeIndex(time) {
     return offset;
 }
 
+function getProportionInTimeSchedEntry(time) {
+    const i = searchTimeIndex(time)
+    const t1 = stringToTime(timeSchedule[i]);
+    const t2 = stringToTime(timeSchedule[i+1]);
+    return (time - t1) / (t2 - t1);
+}
+
 function searchTR(index) {
     const tableTable = document.querySelectorAll("table")
     let offset = 0;
@@ -175,7 +182,7 @@ function searchTR(index) {
     }
 }
 
-const INTERVAL_TIME = 500;
+const INTERVAL_TIME = 200;
 function tickHandler() {
     if (startTimeReal <= 0) {
         return ;
@@ -184,21 +191,24 @@ function tickHandler() {
     const diff = (now - startTimeReal);
     const time = startTimeSched + (diff / 1000);
     const index = searchTimeIndex(time);
+    const tr = searchTR(index);
+    if (tr) {
+        const [td1, td2] = tr.getElementsByTagName('td');
+        const proportion = getProportionInTimeSchedEntry(time);
+        const grad = "linear-gradient(90deg, #eff "+(100*proportion)+"%, #ffc "+(101*proportion)+"%)";
+        td2.style.background = grad;
+    }
     if (playingIndex != index) {
-        const tr = searchTR(index);
-        if (tr) {
-            const [td1, td2] = tr.getElementsByTagName('td');
-            td2.classList.add("playingTd");
-        }
         if (0 <= playingIndex) {
             const trPrev = searchTR(playingIndex);
             if (trPrev) {
                 const [td1, td2] = trPrev.getElementsByTagName('td');
-                td2.classList.remove("playingTd");
+                td2.style.background = "";
             }
         }
         playingIndex = index;
     }
+    // console.log({index, proportion});
 }
 
 setInterval(tickHandler, INTERVAL_TIME);
