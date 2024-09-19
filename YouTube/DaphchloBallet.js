@@ -159,8 +159,19 @@ function searchTimeIndex(time) {
 
 function getProportionInTimeSchedEntry(time) {
     const i = searchTimeIndex(time)
-    const t1 = stringToTime(timeSchedule[i]);
-    const t2 = stringToTime(timeSchedule[i+1]);
+    let t1, t2;
+    for (let j = i; j >= 0; j--) {
+        if (timeSchedule[j]) {
+            t1 = stringToTime(timeSchedule[j]);
+            break;
+        }
+    }
+    for (let j = i+1, n = timeSchedule.length; j < n; j++) {
+        if (timeSchedule[j]) {
+            t2 = stringToTime(timeSchedule[j]);
+            break;
+        }
+    }
     return (time - t1) / (t2 - t1);
 }
 
