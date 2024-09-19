@@ -1,13 +1,5 @@
 "use strict"
 
-const stringToTime = (s) => {
-    let t = 0;
-    for (const tt of s.split(/h|m|:/)) {
-        t = t * 60 + parseFloat(tt);
-    }
-    return t;
-}
-
 const timeSchedule = [
     /*
      * 第1場
@@ -134,14 +126,93 @@ const timeSchedule = [
     "54:26.5", // 「ドルコンのグロテスクな踊り」
     "54:50", // 3拍子のヘミオラ
 ];
+
 const iframe = document.querySelector("iframe")
 let { contentWindow } = iframe;
+let timeIndex = null;
+let startTimeSched = 0;
+let startTimeReal = 0;
+let playingIndex = -1;
+
+const stringToTime = (s) => {
+    let t = 0;
+    for (const tt of s.split(/h|m|:/)) {
+        t = t * 60 + parseFloat(tt);
+    }
+    return t;
+}
+
+function searchTimeIndex(time) {
+    let offset = 0;
+    for (let i = 0, n = timeSchedule.length; i < n ; i++) {
+        const timeStr = timeSchedule[i];
+        if (timeStr) {
+            const t = stringToTime(timeStr);
+            if (time < t) {
+                return offset - 1;
+            }
+        }
+        offset += 1;
+    }
+    return offset;
+}
+
+function searchTR(index) {
+    const tableTable = document.querySelectorAll("table")
+    let offset = 0;
+    for (let i = 0, n = tableTable.length; i < n ; i++) {
+        const table = tableTable[i];
+        const trTable =  table.getElementsByTagName('tr');
+        for (let ii = 0, nn = trTable.length; ii < nn ; ii++) {
+            const tr = trTable[ii];
+            const [td1, td2] = tr.getElementsByTagName('td');
+            if (!td1) continue;  // th skip
+            if (index <= offset) {
+                return tr;
+            }
+            offset ++;
+        }
+    }
+}
+
+const INTERVAL_TIME = 1000;
+function tickHandler() {
+    if (startTimeReal <= 0) {
+        return ;
+    }
+    const now = performance.now();
+    const diff = (now - startTimeReal);
+    const time = startTimeSched + (diff / 1000);
+    const index = searchTimeIndex(time);
+    if (playingIndex != index) {
+        const tr = searchTR(index);
+        if (tr) {
+            const [td1, td2] = tr.getElementsByTagName('td');
+            td2.classList.add("playingTd");
+        }
+        if (0 <= playingIndex) {
+            const trPrev = searchTR(playingIndex);
+            if (trPrev) {
+                const [td1, td2] = trPrev.getElementsByTagName('td');
+                td2.classList.remove("playingTd");
+            }
+        }
+        playingIndex = index;
+    }
+}
+
+setInterval(tickHandler, INTERVAL_TIME);
+
+
 function downHandler(e) {
     const {target } = e;
-    const {time } = target.dataset;
-    console.log("down", target, time);
+    const time = Number(target.dataset.time);
+    // console.log("downHandler", target, time);
     contentWindow.postMessage('{"event":"command","func":"seekTo","args":['+time+', true]}', '*');
     contentWindow.postMessage('{"event":"command","func":"playVideo"}', '*');
+    startTimeSched = time;
+    startTimeReal = performance.now();
+
 }
 
 const tableTable = document.querySelectorAll("table")
@@ -152,7 +223,7 @@ for (let i = 0, n = tableTable.length; i < n ; i++) {
     for (let ii = 0, nn = trTable.length; ii < nn ; ii++) {
         const tr = trTable[ii];
         const [td1, td2] = tr.getElementsByTagName('td');
-        if (!td1) continue;  // th
+        if (!td1) continue;  // th skip
         const timeStr = timeSchedule[offset];
         if (timeStr) {
             td1.classList.add("timeTd");
@@ -163,4 +234,4 @@ for (let i = 0, n = tableTable.length; i < n ; i++) {
         }
         offset ++;
     }
-};
+}
