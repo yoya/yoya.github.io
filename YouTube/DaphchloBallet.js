@@ -210,7 +210,7 @@ function tickHandler() {
     if (tr) {
         const [td1, td2] = tr.getElementsByTagName('td');
         const proportion = getProportionInTimeSchedEntry(time);
-        const grad = "linear-gradient(90deg, #eff "+(100*proportion)+"%, #ffc "+(101*proportion)+"%)";
+        const grad = "linear-gradient(90deg, #eff "+(100*proportion)+"%, #ffd "+(101*proportion)+"%)";
         td2.style.background = grad;
     }
     if (playingIndex != index) {
