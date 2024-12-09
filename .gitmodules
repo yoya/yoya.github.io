@@ -25,3 +25,6 @@
 [submodule "canvas.js"]
 	path = canvas.js
 	url = git@github.com:yoya/canvas.js.git
+[submodule "MusicalScoreIndicator"]
+	path = MusicalScoreIndicator
+	url = git@github.com:yoya/MusicalScoreIndicator.git
