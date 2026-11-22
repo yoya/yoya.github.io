@@ -28,3 +28,6 @@
 [submodule "MusicalScoreIndicator"]
 	path = MusicalScoreIndicator
 	url = git@github.com:yoya/MusicalScoreIndicator.git
+[submodule "Flapp"]
+	path = Flapp
+	url = git@github.com:yoya/Flapp.git
